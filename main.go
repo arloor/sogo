@@ -1,15 +1,35 @@
 package main
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
+
 	"github.com/arloor/sogo/mio"
 	"log"
 	"net"
+	"net/http"
+
 	"strconv"
 )
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	//写回请求体本身
+	bufio.NewReader(r.Body).WriteTo(w)
+
+}
+func server8080() {
+	http.HandleFunc("/", handler)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Println("serve过程中出错", err)
+	}
+}
+
 func main() {
+	go server8080()
+
+	//==================
+
 	ln, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		log.Println("监听", localAddr, "失败 ", err)
@@ -41,7 +61,8 @@ func handleClientConnnection(clientCon net.Conn) {
 			return
 		} else {
 			//开始连接到服务器，并传输
-			var serverConn, dialErr = net.Dial("tcp", addr)
+			var serverConn, dialErr = net.Dial("tcp", proxyAddr)
+			//var serverConn, dialErr = net.Dial("tcp", addr)
 			if dialErr != nil {
 				log.Println("dialErr ", dialErr)
 				clientCon.Close()
@@ -49,8 +70,9 @@ func handleClientConnnection(clientCon net.Conn) {
 			}
 			go handleServerConn(serverConn, clientCon)
 
+			buf := make([]byte, 2048)
 			for {
-				buf := make([]byte, 2048)
+
 				num, readErr := clientCon.Read(buf)
 				if readErr != nil {
 					log.Print("readErr ", readErr, clientCon.RemoteAddr())
@@ -58,25 +80,25 @@ func handleClientConnnection(clientCon net.Conn) {
 					serverConn.Close()
 					return
 				}
-				writeErr := mio.WriteAll(serverConn, buf[:num])
+				writeErr := mio.WriteAll(serverConn, mio.AppendHttpRequestPrefix(buf[:num], addr))
+				//writeErr := mio.WriteAll(serverConn, buf[:num])
 				if writeErr != nil {
 					log.Print("writeErr ", writeErr)
 					clientCon.Close()
 					serverConn.Close()
 					return
 				}
-				buf = buf[:0]
+				buf = buf[0:]
 			}
 		}
-
 	}
 
 }
 
 func handleServerConn(serverConn, clientCon net.Conn) {
 
+	buf := make([]byte, 2048)
 	for {
-		buf := make([]byte, 2048)
 		num, readErr := serverConn.Read(buf)
 		if readErr != nil {
 			log.Print("readErr ", readErr, serverConn.RemoteAddr())
@@ -91,6 +113,7 @@ func handleServerConn(serverConn, clientCon net.Conn) {
 			serverConn.Close()
 			return
 		}
+		buf = buf[0:]
 	}
 }
 

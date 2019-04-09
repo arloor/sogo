@@ -13,7 +13,7 @@ var localAddr string
 var proxyAddr string
 
 func init() {
-	log.SetFlags(log.Lshortfile|log.Flags())
+	log.SetFlags(log.Lshortfile | log.Flags())
 	log.SetOutput(os.Stdout)
 	log.Println("！！！请务必在行前将proxy.json和pac.txt放置到", utils.GetWorkDir(), "路径下")
 	configinit()
@@ -21,7 +21,6 @@ func init() {
 	localAddr = ":" + strconv.Itoa(config.ClientPort)
 	proxyAddr = config.ProxyAddr + ":" + strconv.Itoa(config.ProxyPort)
 }
-
 
 type Info struct {
 	ProxyAddr  string
@@ -31,9 +30,9 @@ type Info struct {
 }
 
 var config = Info{
-	"proxy",
-	8080,
-	8888, //8081，请不要修改
+	"localhost",
+	12345,
+	7777, //8081，请不要修改
 	false,
 }
 
@@ -81,4 +80,3 @@ func configinit() {
 	}
 
 }
-
