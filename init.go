@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/arloor/proxygo/util"
 	"github.com/arloor/sogo/utils"
 	"log"
 	"os"
@@ -53,7 +52,7 @@ func (configInfo Info) ToJSONString() (str string, error error) {
 }
 
 func configinit() {
-	configFile, err := os.Open(util.GetWorkDir() + "proxy.json")
+	configFile, err := os.Open(utils.GetWorkDir() + "proxy.json")
 	if err != nil {
 		log.Println("Error", "打开proxy.json失败，使用默认配置", err)
 		return

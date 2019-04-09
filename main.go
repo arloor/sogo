@@ -27,7 +27,7 @@ func server8080() {
 }
 
 func main() {
-	go server8080()
+	//go server8080()
 
 	//==================
 
@@ -229,6 +229,7 @@ func handshake(clientCon net.Conn) error {
 	} else if numRead == 3 && buf[0] == 0X05 && buf[1] == 0X01 && buf[2] == 0X00 {
 		return mio.WriteAll(clientCon, []byte{0x05, 0x00})
 	} else {
-		return errors.New("不能处理该socks5握手")
+		log.Printf("%d", buf[:numRead])
+		return mio.WriteAll(clientCon, []byte{0x05, 0x00})
 	}
 }
