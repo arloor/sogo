@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
-
+	"fmt"
 	"github.com/arloor/sogo/mio"
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	"strconv"
 )
@@ -95,25 +96,104 @@ func handleClientConnnection(clientCon net.Conn) {
 
 }
 
-func handleServerConn(serverConn, clientCon net.Conn) {
+//HTTP/1.1 200 OK
+//Content-Type: text/plain; charset=utf-8
+//Content-Length: 181
+//
+//HTTP/1.1 304 Not Modified
+//Date: Tue, 09 Apr 2019 08:46:15 GMT
+//Server: Apache/2.4.6 (CentOS)
+//Connection: Keep-Alive
+//Keep-Alive: timeout=5, max=100
+//ETag: "37cb-58613717be980"
 
-	buf := make([]byte, 2048)
+func handleServerConn(serverConn, clientCon net.Conn) {
+	defer serverConn.Close()
+	redundancy := make([]byte, 0)
 	for {
-		num, readErr := serverConn.Read(buf)
-		if readErr != nil {
-			log.Print("readErr ", readErr, serverConn.RemoteAddr())
-			clientCon.Close()
-			serverConn.Close()
-			return
+		redundancyRetain, readerr := read(serverConn, clientCon, redundancy)
+		redundancy = redundancyRetain
+		if readerr != nil {
+			log.Println("readerr", readerr)
+			break
 		}
-		writeErr := mio.WriteAll(clientCon, buf[:num])
-		if writeErr != nil {
-			log.Print("writeErr ", writeErr)
-			clientCon.Close()
-			serverConn.Close()
-			return
+	}
+}
+
+func read(serverConn, clientConn net.Conn, redundancy []byte) (redundancyRetain []byte, readErr error) {
+	buf := make([]byte, 8196)
+	num := 0
+	contentlength := -1
+	prefixAll := false
+	prefix := make([]byte, 0)
+	//redundancy:=make([]byte,0)
+	payload := make([]byte, 0)
+
+	for {
+		if len(redundancy) != 0 {
+			buf = redundancy
+			num = len(redundancy)
+			redundancy = redundancy[0:0]
+		} else {
+			num, readErr = serverConn.Read(buf)
+			if readErr != nil {
+				return redundancy, readErr
+			}
+		}
+
+		if num <= 0 {
+			return nil, errors.New("读到<=0字节，未预期地情况")
+		} else {
+			if !prefixAll { //追加到前缀
+				prefix = append(prefix, buf[:num]...)
+				if index := strings.Index(string(prefix), "\r\n\r\n"); index >= 0 {
+					if index+4 < len(prefix) {
+						payload = append(payload, prefix[index+4:]...)
+					}
+					prefix = prefix[:index]
+					prefixAll = true
+					//分析头部
+					headrs := strings.Split(string(prefix), "\r\n")
+
+					requestline := headrs[0]
+					parts := strings.Split(requestline, " ")
+					if len(parts) < 3 {
+						fmt.Println(requestline)
+						return nil, errors.New("不是以HTTP/1.1 200 OK这种开头，说明上个响应有问题。")
+					}
+					//version := parts[0]
+					//code := parts[1]
+					//msg := parts[2]
+
+					var headmap = make(map[string]string)
+					for i := 1; i < len(headrs); i++ {
+						headsplit := strings.Split(headrs[i], ": ")
+						headmap[headsplit[0]] = headsplit[1]
+					}
+					if headmap["Content-Length"] == "" {
+						contentlength = 0
+					} else {
+						contentlength, _ = strconv.Atoi(headmap["Content-Length"])
+					}
+				}
+			} else { //追加到payload
+				payload = append(payload, buf[:num]...)
+			}
 		}
 		buf = buf[0:]
+		if contentlength != -1 && contentlength < len(payload) { //这说明读多了，要把多的放到redundancy
+			redundancy = append(redundancy, payload[contentlength:]...)
+			payload = payload[:contentlength]
+		}
+		if contentlength == len(payload) {
+			//写会
+			mio.Simple(&payload, len(payload))
+			writeErr := mio.WriteAll(clientConn, payload)
+			if writeErr != nil {
+				clientConn.Close()
+			}
+			return redundancy, writeErr
+		}
 	}
 }
 

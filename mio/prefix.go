@@ -1,6 +1,9 @@
 package mio
 
-import "strconv"
+import (
+	"encoding/base64"
+	"strconv"
+)
 
 //POST / HTTP/1.1
 //cache-control: no-cache
@@ -24,13 +27,15 @@ import "strconv"
 //aaaaa
 
 func AppendHttpRequestPrefix(buf []byte, addr string) []byte {
-	//simple(&buf,len(buf))
-	buf = append([]byte("POST /target?"+addr+" HTTP/1.1\r\nHost: qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
+	Simple(&buf, len(buf))
+	// 演示base64编码
+	addrBase64 := base64.NewEncoding("abcdefghijpqrzABCKLMNOkDEFGHIJl345678mnoPQRSTUVstuvwxyWXYZ0129+/").EncodeToString([]byte(addr))
+	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
 	return buf
 }
 
 //取反
-func simple(bufPtr *[]byte, num int) {
+func Simple(bufPtr *[]byte, num int) {
 	buf := *bufPtr
 	for i := 0; i < num; i++ {
 		buf[i] = ^buf[i]

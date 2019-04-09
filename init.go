@@ -30,8 +30,9 @@ type Info struct {
 }
 
 var config = Info{
-	"localhost",
-	12345,
+	"proxy",
+	//"localhost",
+	80,
 	7777, //8081，请不要修改
 	false,
 }
