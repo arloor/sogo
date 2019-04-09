@@ -25,12 +25,13 @@ import (
 //Connection: keep-alive
 //
 //aaaaa
+var fakeHost = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
 
 func AppendHttpRequestPrefix(buf []byte, addr string) []byte {
 	Simple(&buf, len(buf))
 	// 演示base64编码
 	addrBase64 := base64.NewEncoding("abcdefghijpqrzABCKLMNOkDEFGHIJl345678mnoPQRSTUVstuvwxyWXYZ0129+/").EncodeToString([]byte(addr))
-	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
+	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: "+fakeHost+"\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
 	return buf
 }
 
