@@ -32,7 +32,7 @@ var config = Info{
 	"proxy",
 	//"localhost",
 	80,
-	7777, //8081，请不要修改
+	8888, //8081，请不要修改
 	false,
 }
 
