@@ -202,6 +202,59 @@ Host: {fakehost}
 对这种，我们就会将该请求，原封不动地转到伪装站。（其实还是有点修改的，但这是细节，看代码吧）所以，直接访问sogo-server-ip:80 就是访问伪装站：80。
 
 
+## linux上服务端部署
+
+```shell
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo-server
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo-server.json
+
+chmod +x sogo-server
+mv -f sogo-server /usr/local/bin/
+mv -f sogo-server.json /usr/local/bin/
+kill -9 $(lsof -i:80|tail -1|awk '$1!=""{print $2}') #关闭80端口应用
+(sogo-server &)
+```
+
+## linux上客户端安装
+
+```shell
+# 国内机器下面两个wget会很慢，考虑本地下载再上传到服务器吧
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo.json
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo
+
+chmod +x sogo
+mv -f sogo /usr/local/bin/
+mv -f sogo.json /usr/local/bin/
+# 运行前，先修改/usr/local/bin/sogo.json
+(sogo &) #以 /usr/local/bin/sogo.json 为配置文件  该配置下，服务端地址被设置为proxy
+#(sogo -c path &)  #以path指向的文件为配置文件
+```
+
+## windows客户端安装
+
+到[Release](https://github.com/arloor/sogo/releases/tag/v1.0)下载`sogo.exe`和`sogo.json`。
+
+sogo.json内容如下：
+
+```json
+{
+  "ClientPort": 8888,
+  "Use": 0,
+  "Servers": [
+    {
+      "ProxyAddr": "proxy",
+      "ProxyPort": 80,
+      "UserName": "a",
+      "Password": "b"
+    }
+  ],
+  "Dev":false
+}
+```
+先修改`ProxyAddr`为服务端安装的地址即可。其他配置项是高级功能，例如多用户管理等等。
+
+修改好之后，双击`sogo.exe`，这时会发现该目录下多了一个 sogo_8888.log 的文件，这就说明，在本地的8888端口启动好了这个sock5代理。（没有界面哦。
+
 ## 结束
 
 这篇博客梳理了一下sogo的实现原理，总之，sogo是一个优雅的翻墙代理。并且机缘巧合也获得了一些实际的好处，还是挺舒服的。sogo代码不多，对go语言、翻墙原理、网络编程感兴趣的人可以看看。
