@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/arloor/sogo/utils"
 	"log"
 	"os"
 	"strconv"
 )
 
-var configFilePath string = "sogo.json" //绝对路径或相对路径
+var configFilePath string = utils.GetWorkDir() + "sogo.json" //绝对路径或相对路径
 
 var localAddr string
 var proxyAddr string
@@ -19,7 +20,7 @@ const fakeHost string = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
 var authorization string
 
 func printUsage() {
-	fmt.Println("运行方式： sogo [-c  configFilePath ]  若不使用 -c指定配置文件，则默认使用当前目录下的sogo.json")
+	fmt.Println("运行方式： sogo [-c  configFilePath ]  若不使用 -c指定配置文件，则默认使用" + configFilePath)
 }
 
 func init() {
