@@ -1,39 +1,79 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
-	"github.com/arloor/sogo/utils"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 )
 
+var configFilePath string = "sogo.json" //绝对路径或相对路径
+
 var localAddr string
 var proxyAddr string
 
+const fakeHost string = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
+
+var authorization string
+
+func printUsage() {
+	fmt.Println("运行方式： sogo [-c  configFilePath ]  若不使用 -c指定配置文件，则默认使用当前目录下的sogo.json")
+}
+
 func init() {
-	log.SetFlags(log.Lshortfile | log.Flags())
+
+	printUsage()
+
+	if len(os.Args) == 3 && os.Args[1] == "-c" {
+		configFilePath = os.Args[2]
+	}
+
 	log.SetOutput(os.Stdout)
-	log.Println("！！！请务必在行前将proxy.json和pac.txt放置到", utils.GetWorkDir(), "路径下")
+	log.SetFlags(log.Lshortfile | log.Flags())
 	configinit()
-	log.Println("配置信息为：", config)
-	localAddr = ":" + strconv.Itoa(config.ClientPort)
-	proxyAddr = config.ProxyAddr + ":" + strconv.Itoa(config.ProxyPort)
+	log.Println("配置信息为：", Config)
+	server := Config.Servers[Config.Use]
+	setServerConfig(server)
+	if !Config.Dev {
+		log.Println("已启动sogo客户端，请在sogo_" + strconv.Itoa(Config.ClientPort) + ".log查看详细日志")
+		f, _ := os.OpenFile("sogo_"+strconv.Itoa(Config.ClientPort)+".log", os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_APPEND, 0755)
+		log.SetOutput(f)
+	}
+
+	localAddr = ":" + strconv.Itoa(Config.ClientPort)
+
+}
+
+//设置两个参数
+func setServerConfig(server Server) {
+	proxyAddr = server.ProxyAddr + ":" + strconv.Itoa(server.ProxyPort)
+	authorization = base64.StdEncoding.EncodeToString([]byte(server.UserName + ":" + server.Password))
+	log.Println("服务器配置：", proxyAddr, "认证信息：", "Basic "+authorization)
+}
+
+type Server struct {
+	ProxyAddr string
+	ProxyPort int
+	UserName  string
+	Password  string
 }
 
 type Info struct {
-	ProxyAddr  string
-	ProxyPort  int
-	ClientPort int  //8081，请不要修改
-	Relay      bool //如果设为true ，则只做转发，不做加解密
+	Dev        bool
+	ClientPort int
+	Use        int
+	Servers    []Server //8081，请不要修改
 }
 
-var config = Info{
-	"proxy",
-	//"localhost",
-	80,
-	8888, //8081，请不要修改
-	false,
+var Config = Info{
+	true,
+	8888,
+	0,
+	[]Server{
+		Server{"proxy", 80, "user", "passwd"},
+	},
 }
 
 func (configInfo Info) String() string {
@@ -52,9 +92,10 @@ func (configInfo Info) ToJSONString() (str string, error error) {
 }
 
 func configinit() {
-	configFile, err := os.Open(utils.GetWorkDir() + "proxy.json")
+	configFile, err := os.Open(configFilePath)
+	defer configFile.Close()
 	if err != nil {
-		log.Println("Error", "打开proxy.json失败，使用默认配置", err)
+		log.Println("Error", "打开"+configFilePath+"失败，使用默认配置", err)
 		return
 	}
 	bufSize := 1024
@@ -64,18 +105,18 @@ func configinit() {
 		n, err := configFile.Read(buf)
 		total += n
 		if err != nil {
-			log.Println("Error", "读取proxy.json失败，使用默认配置", err)
+			log.Println("Error", "读取"+configFilePath+"失败，使用默认配置", err)
 			return
 		} else if n < bufSize {
-			log.Println("OK", "读取proxy.json成功")
+			log.Println("OK", "读取"+configFilePath+"成功")
 			buf = buf[:total]
 			break
 		}
 
 	}
-	err = json.Unmarshal(buf, &config)
+	err = json.Unmarshal(buf, &Config)
 	if err != nil {
-		log.Println("Error", "读取proxy.json失败，使用默认配置", err)
+		log.Println("Error", "读取"+configFilePath+"失败，使用默认配置", err)
 		return
 	}
 

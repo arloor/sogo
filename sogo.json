@@ -1,0 +1,19 @@
+{
+  "ClientPort": 9999,
+  "Use": 0,
+  "Servers": [
+    {
+      "ProxyAddr": "localhost",
+      "ProxyPort": 80,
+      "UserName": "a",
+      "Password": "b"
+    },
+    {
+      "ProxyAddr": "proxy1",
+      "ProxyPort": 80,
+      "UserName": "a",
+      "Password": "b"
+    }
+  ],
+  "Dev":false
+}

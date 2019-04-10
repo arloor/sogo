@@ -33,11 +33,11 @@ func main() {
 
 	ln, err := net.Listen("tcp", localAddr)
 	if err != nil {
-		log.Println("监听", localAddr, "失败 ", err)
+		fmt.Println("监听", localAddr, "失败 ", err)
 		return
 	}
 	defer ln.Close()
-	log.Println("成功监听 ", ln.Addr())
+	fmt.Println("成功监听 ", ln.Addr())
 	for {
 		c, err := ln.Accept()
 		if err != nil {
@@ -81,7 +81,7 @@ func handleClientConnnection(clientCon net.Conn) {
 					serverConn.Close()
 					return
 				}
-				writeErr := mio.WriteAll(serverConn, mio.AppendHttpRequestPrefix(buf[:num], addr))
+				writeErr := mio.WriteAll(serverConn, mio.AppendHttpRequestPrefix(buf[:num], addr, fakeHost, authorization))
 				//writeErr := mio.WriteAll(serverConn, buf[:num])
 				if writeErr != nil {
 					log.Print("writeErr ", writeErr)

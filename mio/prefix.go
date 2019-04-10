@@ -25,13 +25,12 @@ import (
 //Connection: keep-alive
 //
 //aaaaa
-var fakeHost = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
 
-func AppendHttpRequestPrefix(buf []byte, addr string) []byte {
+func AppendHttpRequestPrefix(buf []byte, targetAddr string, fakeHost string, authorization string) []byte {
 	Simple(&buf, len(buf))
 	// 演示base64编码
-	addrBase64 := base64.NewEncoding("abcdefghijpqrzABCKLMNOkDEFGHIJl345678mnoPQRSTUVstuvwxyWXYZ0129+/").EncodeToString([]byte(addr))
-	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: "+fakeHost+"\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
+	addrBase64 := base64.NewEncoding("abcdefghijpqrzABCKLMNOkDEFGHIJl345678mnoPQRSTUVstuvwxyWXYZ0129+/").EncodeToString([]byte(targetAddr))
+	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: "+fakeHost+"\r\nAuthorization: Basic "+authorization+"\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
 	return buf
 }
 
