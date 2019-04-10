@@ -72,7 +72,7 @@ var Config = Info{
 	8888,
 	0,
 	[]Server{
-		Server{"proxy", 80, "user", "passwd"},
+		Server{"proxy", 80, "a", "b"},
 	},
 }
 
