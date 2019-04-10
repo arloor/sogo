@@ -4,6 +4,15 @@
 
 服务器端：[sogo-server](https://github.com/arloor/sogo-server)
 
+之前写了一个http代理，用起来也是十分地舒服，但是有几个点还是有些遗憾的：
+
+- http代理只能代理http协议，相比socks5代理不够通用。。
+- netty是个好框架，但是java占用内存是真的多。。
+
+所以，我又写了一个socks5代理，起名叫[sogo](https://github.com/arloor/sogo)。
+
+sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。sogo(client)和sogo-server之间的这段就是翻墙的重点——采取各种方式混过GFW，我采用的“http流量包裹payload”应该算是比较优雅的一种。
+
 ## 运行日志
 
 以下是观看一个youtube视频的日志：
@@ -35,15 +44,7 @@
 2019/04/10 00:16:00 main.go:207: 目的地址类型:3 域名长度:14 目标域名:api.github.com 目标端口:443
 ```
 
-之前写了一个http代理，用起来也是十分地舒服，但是有几个点还是有些遗憾的：
 
-- http代理只能代理http协议，相比socks5代理不够通用。。
-- netty是个好框架，但是java占用内存是真的多。。
-
-所以，我又写了一个socks5代理，起名叫[sogo](https://github.com/arloor/sogo)。
-
-sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。sogo(client)和sogo-server之间的这段就是翻墙的重点——采取各种方式混过GFW，我采用的“http流量包裹payload”应该算是比较优雅的一种。
-<!--more-->
 
 ## 特性
 
