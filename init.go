@@ -69,7 +69,7 @@ type Info struct {
 
 var Config = Info{
 	true,
-	8888,
+	7777,
 	0,
 	[]Server{
 		Server{"proxy", 80, "a", "b"},

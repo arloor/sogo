@@ -1,5 +1,5 @@
 {
-  "ClientPort": 9999,
+  "ClientPort": 7777,
   "Use": 0,
   "Servers": [
     {
@@ -9,5 +9,5 @@
       "Password": "b"
     }
   ],
-  "Dev":false
+  "Dev":true
 }
