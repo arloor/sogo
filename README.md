@@ -212,6 +212,7 @@ chmod +x sogo-server
 mv -f sogo-server /usr/local/bin/
 mv -f sogo-server.json /usr/local/bin/
 kill -9 $(lsof -i:80|tail -1|awk '$1!=""{print $2}') #关闭80端口应用
+ulimit -n 65536 #设置进程最多打开文件数量，防止 too many openfiles错误（太多连接
 (sogo-server &)
 ```
 
@@ -225,6 +226,7 @@ wget https://github.com/arloor/sogo/releases/download/v1.0/sogo
 chmod +x sogo
 mv -f sogo /usr/local/bin/
 mv -f sogo.json /usr/local/bin/
+ulimit -n 65536 #设置进程最多打开文件数量，防止 too many openfiles错误（太多连接
 # 运行前，先修改/usr/local/bin/sogo.json
 (sogo &) #以 /usr/local/bin/sogo.json 为配置文件  该配置下，服务端地址被设置为proxy
 #(sogo -c path &)  #以path指向的文件为配置文件
@@ -251,7 +253,9 @@ sogo.json内容如下：
   "Dev":false
 }
 ```
-先修改`ProxyAddr`为服务端安装的地址即可。其他配置项是高级功能，例如多用户管理等等。
+先修改`ProxyAddr`为服务端安装的地址即可。其他配置项是高级功能，例如多服务器管理，多用户管理（用户认证）等等。
+
+>shadowsocks是没有多用户管理的，ss每个端口对应一个用户。sogo则使用用户名+密码认证，使多个用户使用同一个服务器端口。
 
 修改好之后，双击`sogo.exe`，这时会发现该目录下多了一个 sogo_8888.log 的文件，这就说明，在本地的8888端口启动好了这个sock5代理。（没有界面哦。
 
