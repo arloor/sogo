@@ -14,7 +14,7 @@
 sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。
 ## 运行日志
 
-以下是观看一个youtube视频的日志：
+以下是观看一个视频的日志：
 
 ```shell
 2019/04/10 00:14:28 main.go:58: 与客户端握手成功
@@ -260,5 +260,5 @@ sogo.json内容如下：
 
 ## 结束
 
-这篇博客梳理了一下sogo的实现原理，总之，sogo是一个优雅的代理。sogo代码不多，对go语言、翻墙原理、网络编程感兴趣的人可以看看。
+这篇博客梳理了一下sogo的实现原理，总之，sogo是一个优雅的代理。sogo代码不多，对go语言、网络编程感兴趣的人可以看看。
 
