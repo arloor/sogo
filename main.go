@@ -201,7 +201,8 @@ func read(serverConn, clientConn net.Conn, redundancy []byte) (redundancyRetain 
 }
 
 func getTargetAddr(clientCon net.Conn) (string, error) {
-	var buf = make([]byte, 1024)
+	var buf = pool.Get().([]byte)
+	defer pool.Put(buf)
 	numRead, err := clientCon.Read(buf)
 	if err != nil {
 		return "", err
@@ -225,7 +226,9 @@ func getTargetAddr(clientCon net.Conn) (string, error) {
 
 //读 5 1 0 写回 5 0
 func handshake(clientCon net.Conn) error {
-	var buf = make([]byte, 300)
+	//var buf = make([]byte,100)
+	var buf = pool.Get().([]byte)
+	defer pool.Put(buf)
 	numRead, err := clientCon.Read(buf)
 	if err != nil {
 		return err

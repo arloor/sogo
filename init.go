@@ -8,12 +8,19 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 var configFilePath string = utils.GetWorkDir() + "sogo.json" //绝对路径或相对路径
 
 var localAddr string
 var proxyAddr string
+
+var pool = &sync.Pool{
+	New: func() interface{} {
+		return make([]byte, 9192)
+	},
+}
 
 const fakeHost string = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
 
