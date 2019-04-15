@@ -24,6 +24,14 @@ var prefix3 = "\r\n\r\n"
 
 var pool = &sync.Pool{
 	New: func() interface{} {
+		println("new 1")
+		return make([]byte, 9192)
+	},
+}
+
+var pool2 = &sync.Pool{
+	New: func() interface{} {
+		println("new 22222222")
 		return make([]byte, 9192)
 	},
 }
