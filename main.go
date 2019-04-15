@@ -117,7 +117,12 @@ func handleServerConn(serverConn, clientCon net.Conn) {
 	payload := pool2.Get().([]byte)[:0]
 	prefixBuf := pool2.Get().([]byte)[:0]
 	redundencyBuf := pool2.Get().([]byte)[:0]
-	defer pool2.Put(readBuf)
+	defer func() {
+		pool2.Put(readBuf)
+		pool2.Put(payload)
+		pool2.Put(prefixBuf)
+		pool2.Put(redundencyBuf)
+	}()
 
 	state := "preflix"
 	contentlength := -1
