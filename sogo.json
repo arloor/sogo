@@ -3,7 +3,7 @@
   "Use": 0,
   "Servers": [
     {
-      "ProxyAddr": "47.75.201.120",
+      "ProxyAddr": "localhost",
       "ProxyPort": 80,
       "UserName": "a",
       "Password": "b"

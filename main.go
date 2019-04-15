@@ -113,25 +113,131 @@ func handleClientConnnection(clientCon net.Conn) {
 
 func handleServerConn(serverConn, clientCon net.Conn) {
 	defer serverConn.Close()
-	redundancy := make([]byte, 0)
+	readBuf := pool2.Get().([]byte)
+	payload := pool2.Get().([]byte)[:0]
+	prefixBuf := pool2.Get().([]byte)[:0]
+	redundencyBuf := pool2.Get().([]byte)[:0]
+	defer pool2.Put(readBuf)
+
+	state := "preflix"
+	contentlength := -1
 	for {
-		redundancyRetain, readerr := read(serverConn, clientCon, redundancy)
-		redundancy = redundancyRetain
-		if readerr != nil {
-			log.Println("readerr", readerr)
-			break
+		var buf []byte = nil //待处理的字符
+		if len(redundencyBuf) != 0 {
+			buf = redundencyBuf
+			redundencyBuf = redundencyBuf[:0]
+		} else {
+			readNum, readErr := serverConn.Read(readBuf)
+			if readErr != nil {
+				log.Println("readErr ", readErr)
+				clientCon.Close()
+				break
+			}
+			buf = readBuf[:readNum]
+		}
+
+		switch state {
+		case "preflix":
+			//获取响应的prefix
+			//HTTP/1.1 200 OK
+			//Content-Type: text/plain; charset=utf-8
+			//Content-Length: 3717
+			for i := 0; i+4 <= len(buf); i++ { //0 1 2 3 4   5
+				if buf[i] == '\r' && buf[i+2] == '\r' && buf[i+1] == '\n' && buf[i+3] == '\n' {
+					prefixBuf = append(prefixBuf, buf[:i]...)
+					state = "payload"
+					if i+4 < len(buf) {
+						redundencyBuf = append(redundencyBuf, buf[i+4:]...)
+					}
+					break
+				}
+			}
+			if state == "payload" {
+				//分析头部，获取响应头的contentlength
+				headrs := strings.Split(string(prefixBuf), "\r\n")
+				requestline := headrs[0]
+				parts := strings.Split(requestline, " ")
+				if len(parts) < 3 {
+					fmt.Println(requestline)
+					log.Println(errors.New("不是以HTTP/1.1 200 OK这种开头，说明上个响应有问题。"))
+					clientCon.Close()
+					return
+				}
+				//version := parts[0]
+				//code := parts[1]
+				//msg := parts[2]
+				var headmap = make(map[string]string)
+				for i := 1; i < len(headrs); i++ {
+					headsplit := strings.Split(headrs[i], ": ")
+					if len(headsplit) == 2 {
+						headmap[headsplit[0]] = headsplit[1]
+					}
+				}
+				if headmap["Content-Length"] == "" {
+					contentlength = 0
+				} else {
+					contentlength, _ = strconv.Atoi(headmap["Content-Length"])
+				}
+				//log.Println(contentlength)
+			} else if state == "preflix" {
+				prefixBuf = append(prefixBuf, buf[:len(buf)]...)
+			}
+		case "payload":
+			toAppend := contentlength - len(payload)
+			hasAll := true
+			if toAppend > len(buf) {
+				hasAll = false
+			}
+			if hasAll {
+				payload = append(payload, buf[:toAppend]...)
+				state = "ready"
+				if len(buf) > toAppend {
+					redundencyBuf = append(redundencyBuf, buf[toAppend:]...)
+				}
+
+				//下面开始传输payload
+				mio.Simple(&payload, len(payload))
+				mio.WriteAll(clientCon, payload)
+				payload = payload[:0]
+				state = "preflix"
+			} else {
+				payload = append(payload, buf[:len(buf)]...)
+			}
+
+		default:
+
 		}
 	}
 }
 
+//func handleServerConn(serverConn, clientCon net.Conn) {
+//	defer serverConn.Close()
+//	redundancy := make([]byte, 0)
+//	for {
+//		redundancyRetain, readerr := read(serverConn, clientCon, redundancy)
+//		redundancy = redundancyRetain
+//		if readerr != nil {
+//			log.Println("readerr", readerr)
+//			break
+//		}
+//	}
+//}
+
 func read(serverConn, clientConn net.Conn, redundancy []byte) (redundancyRetain []byte, readErr error) {
-	buf := make([]byte, 8196)
+	buf := pool2.Get().([]byte)
+
 	num := 0
 	contentlength := -1
 	prefixAll := false
-	prefix := make([]byte, 0)
+	prefix := pool2.Get().([]byte)[0:0]
 	//redundancy:=make([]byte,0)
-	payload := make([]byte, 0)
+	payload := pool2.Get().([]byte)[0:0]
+
+	defer func() {
+		pool2.Put(buf)
+		pool2.Put(prefix[:cap(prefix)])
+		pool2.Put(payload[:cap(payload)])
+	}()
 
 	for {
 		if len(redundancy) != 0 {
