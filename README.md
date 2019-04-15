@@ -11,11 +11,10 @@
 
 所以，我又写了一个socks5代理，起名叫[sogo](https://github.com/arloor/sogo)。
 
-sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。sogo(client)和sogo-server之间的这段就是翻墙的重点——采取各种方式混过GFW，我采用的“http流量包裹payload”应该算是比较优雅的一种。
-
+sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。
 ## 运行日志
 
-以下是观看一个youtube视频的日志：
+以下是观看一个视频的日志：
 
 ```shell
 2019/04/10 00:14:28 main.go:58: 与客户端握手成功
@@ -202,7 +201,64 @@ Host: {fakehost}
 对这种，我们就会将该请求，原封不动地转到伪装站。（其实还是有点修改的，但这是细节，看代码吧）所以，直接访问sogo-server-ip:80 就是访问伪装站：80。
 
 
+## linux上服务端部署
+
+```shell
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo-server
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo-server.json
+
+chmod +x sogo-server
+mv -f sogo-server /usr/local/bin/
+mv -f sogo-server.json /usr/local/bin/
+kill -9 $(lsof -i:80|tail -1|awk '$1!=""{print $2}') #关闭80端口应用
+ulimit -n 65536 #设置进程最多打开文件数量，防止 too many openfiles错误（太多连接
+(sogo-server &)
+```
+
+## linux上客户端安装
+
+```shell
+# 国内机器下面两个wget会很慢，考虑本地下载再上传到服务器吧
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo.json
+wget https://github.com/arloor/sogo/releases/download/v1.0/sogo
+
+chmod +x sogo
+mv -f sogo /usr/local/bin/
+mv -f sogo.json /usr/local/bin/
+ulimit -n 65536 #设置进程最多打开文件数量，防止 too many openfiles错误（太多连接
+# 运行前，先修改/usr/local/bin/sogo.json
+(sogo &) #以 /usr/local/bin/sogo.json 为配置文件  该配置下，服务端地址被设置为proxy
+#(sogo -c path &)  #以path指向的文件为配置文件
+```
+
+## windows客户端安装
+
+到[Release](https://github.com/arloor/sogo/releases/tag/v1.0)下载`sogo.exe`和`sogo.json`。
+
+sogo.json内容如下：
+
+```json
+{
+  "ClientPort": 8888,
+  "Use": 0,
+  "Servers": [
+    {
+      "ProxyAddr": "proxy",
+      "ProxyPort": 80,
+      "UserName": "a",
+      "Password": "b"
+    }
+  ],
+  "Dev":false
+}
+```
+先修改`ProxyAddr`为服务端安装的地址即可。其他配置项是高级功能，例如多服务器管理，多用户管理（用户认证）等等。
+
+>shadowsocks是没有多用户管理的，ss每个端口对应一个用户。sogo则使用用户名+密码认证，使多个用户使用同一个服务器端口。
+
+修改好之后，双击`sogo.exe`，这时会发现该目录下多了一个 sogo_8888.log 的文件，这就说明，在本地的8888端口启动好了这个sock5代理。（没有界面哦。
+
 ## 结束
 
-这篇博客梳理了一下sogo的实现原理，总之，sogo是一个优雅的翻墙代理。并且机缘巧合也获得了一些实际的好处，还是挺舒服的。sogo代码不多，对go语言、翻墙原理、网络编程感兴趣的人可以看看。
+这篇博客梳理了一下sogo的实现原理，总之，sogo是一个优雅的代理。sogo代码不多，对go语言、网络编程感兴趣的人可以看看。
 
