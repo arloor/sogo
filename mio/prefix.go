@@ -26,11 +26,39 @@ import (
 //
 //aaaaa
 
-func AppendHttpRequestPrefix(buf []byte, targetAddr string, fakeHost string, authorization string) []byte {
-	Simple(&buf, len(buf))
+func AppendHttpRequestPrefix(buf []byte, targetAddr string, prefix1 string, prefix2 string, prefix3 string) []byte {
+	content := buf[1000:]
+	prefix := buf[:1000]
+	Simple(&content, len(content))
+	contentLength := strconv.Itoa(len(content))
 	// 演示base64编码
 	addrBase64 := base64.NewEncoding("abcdefghijpqrzABCKLMNOkDEFGHIJl345678mnoPQRSTUVstuvwxyWXYZ0129+/").EncodeToString([]byte(targetAddr))
-	buf = append([]byte("POST /target?at="+addrBase64+" HTTP/1.1\r\nHost: "+fakeHost+"\r\nAuthorization: Basic "+authorization+"\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "+strconv.Itoa(len(buf))+"\r\n\r\n"), buf...)
+	prefixEnd := 1000
+	prefixLength := len(prefix1) + len(addrBase64) + len(prefix2) + len(contentLength) + len(prefix3)
+	prefixStart := prefixEnd - prefixLength
+	prefixIndex := prefixStart
+	for _, x := range prefix1 {
+		prefix[prefixIndex] = byte(x)
+		prefixIndex++
+	}
+	for _, x := range addrBase64 {
+		prefix[prefixIndex] = byte(x)
+		prefixIndex++
+	}
+	for _, x := range prefix2 {
+		prefix[prefixIndex] = byte(x)
+		prefixIndex++
+	}
+	for _, x := range contentLength {
+		prefix[prefixIndex] = byte(x)
+		prefixIndex++
+	}
+	for _, x := range prefix3 {
+		prefix[prefixIndex] = byte(x)
+		prefixIndex++
+	}
+	buf = buf[prefixStart:]
+	//println(len(buf))  lenbuf就是实际上传字节数
 	return buf
 }
 
