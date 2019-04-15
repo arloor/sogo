@@ -10,6 +10,7 @@ import (
 func GetWorkDir() string {
 	file, err := exec.LookPath(os.Args[0])
 	if err != nil {
+		//
 		return ""
 	}
 	path, err := filepath.Abs(file)
