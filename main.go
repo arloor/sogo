@@ -74,17 +74,18 @@ func handleClientConnnection(clientCon net.Conn) {
 			}
 			go handleServerConn(serverConn, clientCon)
 
-			buf := make([]byte, 2048)
+			var buf = pool.Get().([]byte)
+			defer pool.Put(buf)
 			for {
 
-				num, readErr := clientCon.Read(buf)
+				num, readErr := clientCon.Read(buf[1000:])
 				if readErr != nil {
 					log.Print("readErr ", readErr, clientCon.RemoteAddr())
 					clientCon.Close()
 					serverConn.Close()
 					return
 				}
-				writeErr := mio.WriteAll(serverConn, mio.AppendHttpRequestPrefix(buf[:num], addr, fakeHost, authorization))
+				writeErr := mio.WriteAll(serverConn, mio.AppendHttpRequestPrefix(buf[:num+1000], addr, prefix1, prefix2, prefix3))
 				//writeErr := mio.WriteAll(serverConn, buf[:num])
 				if writeErr != nil {
 					log.Print("writeErr ", writeErr)
@@ -149,6 +150,8 @@ func read(serverConn, clientConn net.Conn, redundancy []byte) (redundancyRetain 
 		} else {
 			if !prefixAll { //追加到前缀
 				prefix = append(prefix, buf[:num]...)
+				//todo
+				// string(prefix)需要优化，只是为了找到\r\n\r\n别这样,别转成string
 				if index := strings.Index(string(prefix), "\r\n\r\n"); index >= 0 {
 					if index+4 < len(prefix) {
 						payload = append(payload, prefix[index+4:]...)

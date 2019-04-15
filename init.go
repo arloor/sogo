@@ -15,6 +15,12 @@ var configFilePath string = utils.GetWorkDir() + "sogo.json" //绝对路径或�
 
 var localAddr string
 var proxyAddr string
+var authorization string
+var prefix1 string = "POST /target?at="
+var prefix2 string
+var prefix3 = "\r\n\r\n"
+
+//prefix= prefix1+target+prefix2+length+prefix
 
 var pool = &sync.Pool{
 	New: func() interface{} {
@@ -23,8 +29,6 @@ var pool = &sync.Pool{
 }
 
 const fakeHost string = "qtgwuehaoisdhuaishdaisuhdasiuhlassjd.com"
-
-var authorization string
 
 func printUsage() {
 	fmt.Println("运行方式： sogo [-c  configFilePath ]  若不使用 -c指定配置文件，则默认使用" + configFilePath)
@@ -54,10 +58,11 @@ func init() {
 
 }
 
-//设置两个参数
+//设置三个参数
 func setServerConfig(server Server) {
 	proxyAddr = server.ProxyAddr + ":" + strconv.Itoa(server.ProxyPort)
 	authorization = base64.StdEncoding.EncodeToString([]byte(server.UserName + ":" + server.Password))
+	prefix2 = " HTTP/1.1\r\nHost: " + fakeHost + "\r\nAuthorization: Basic " + authorization + "\r\nAccept: */*\r\nContent-Type: text/plain\r\naccept-encoding: gzip, deflate\r\ncontent-length: "
 	log.Println("服务器配置：", proxyAddr, "认证信息：", "Basic "+authorization)
 }
 
