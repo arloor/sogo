@@ -3,11 +3,11 @@
   "Use": 0,
   "Servers": [
     {
-      "ProxyAddr": "proxy",
+      "ProxyAddr": "localhost",
       "ProxyPort": 80,
       "UserName": "a",
       "Password": "b"
     }
   ],
-  "Dev":false
+  "Dev":true
 }
