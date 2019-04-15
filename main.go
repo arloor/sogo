@@ -14,6 +14,9 @@ import (
 	"strconv"
 )
 
+var hand = []byte{0x05, 0x00}
+var ack = []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	//写回请求体本身
 	bufio.NewReader(r.Body).WriteTo(w)
@@ -205,11 +208,11 @@ func getTargetAddr(clientCon net.Conn) (string, error) {
 	} else if numRead > 3 && buf[0] == 0X05 && buf[1] == 0X01 && buf[2] == 0X00 {
 		if buf[3] == 3 {
 			log.Printf("目的地址类型:%d 域名长度:%d 目标域名:%s 目标端口:%s", buf[3], buf[4], buf[5:5+buf[4]], strconv.Itoa(int(binary.BigEndian.Uint16(buf[5+buf[4]:7+buf[4]]))))
-			writeErr := mio.WriteAll(clientCon, []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10})
+			writeErr := mio.WriteAll(clientCon, ack)
 			return string(buf[5:5+buf[4]]) + ":" + strconv.Itoa(int(binary.BigEndian.Uint16(buf[5+buf[4]:7+buf[4]]))), writeErr
 		} else if buf[3] == 1 {
 			log.Printf("目的地址类型:%d  目标域名:%s 目标端口:%s", buf[3], net.IPv4(buf[4], buf[5], buf[6], buf[7]).String(), strconv.Itoa(int(binary.BigEndian.Uint16(buf[8:10]))))
-			writeErr := mio.WriteAll(clientCon, []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10})
+			writeErr := mio.WriteAll(clientCon, ack)
 			return net.IPv4(buf[4], buf[5], buf[6], buf[7]).String() + ":" + strconv.Itoa(int(binary.BigEndian.Uint16(buf[8:10]))), writeErr
 		} else {
 			return "", errors.New("不能处理ipv6")
@@ -227,9 +230,9 @@ func handshake(clientCon net.Conn) error {
 	if err != nil {
 		return err
 	} else if numRead == 3 && buf[0] == 0X05 && buf[1] == 0X01 && buf[2] == 0X00 {
-		return mio.WriteAll(clientCon, []byte{0x05, 0x00})
+		return mio.WriteAll(clientCon, hand)
 	} else {
 		log.Printf("%d", buf[:numRead])
-		return mio.WriteAll(clientCon, []byte{0x05, 0x00})
+		return mio.WriteAll(clientCon, hand)
 	}
 }
