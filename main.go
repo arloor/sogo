@@ -51,6 +51,13 @@ func main() {
 	}
 }
 
+func ban(addr string) bool {
+	if strings.Contains(addr, "imap") {
+		return true
+	}
+	return false
+}
+
 func handleClientConnnection(clientCon net.Conn) {
 	defer clientCon.Close()
 	handshakeErr := handshake(clientCon)
@@ -62,6 +69,9 @@ func handleClientConnnection(clientCon net.Conn) {
 		addr, getTargetErr := getTargetAddr(clientCon)
 		if getTargetErr != nil {
 			log.Println("getTargetErr ", getTargetErr)
+			return
+		} else if ban(addr) {
+			log.Println("ban", addr)
 			return
 		} else {
 			//开始连接到服务器，并传输
