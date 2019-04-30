@@ -3,11 +3,13 @@
   "Use": 0,
   "Servers": [
     {
-      "ProxyAddr": "proxy",
+      "ProxyAddr": "47.75.242.36",
       "ProxyPort": 80,
       "UserName": "a",
       "Password": "b"
     }
   ],
+  "User": "youwillneveruse",
+  "Pass": "thissock5",
   "Dev":true
 }

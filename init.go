@@ -66,6 +66,8 @@ type Info struct {
 	ClientPort int
 	Use        int
 	Servers    []Server //8081，请不要修改
+	User       string
+	Pass       string
 }
 
 var Config = Info{
@@ -75,6 +77,8 @@ var Config = Info{
 	[]Server{
 		Server{"proxy", 80, "a", "b"},
 	},
+	"youwillneveruse",
+	"thissock5",
 }
 
 func (configInfo Info) String() string {

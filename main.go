@@ -14,7 +14,7 @@ import (
 	"strconv"
 )
 
-var hand = []byte{0x05, 0x00}
+var hand = []byte{0x05, 0x02}
 var ack = []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10}
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +58,12 @@ func handleClientConnnection(clientCon net.Conn) {
 		log.Println("handshakeErr ", handshakeErr)
 		return
 	} else {
-		log.Println("与客户端握手成功")
+		//log.Println("与客户端握手成功")
+		authErr := auth(clientCon)
+		if authErr != nil {
+			log.Println("认证错误  ", authErr, clientCon.RemoteAddr())
+			return
+		}
 		addr, getTargetErr := getTargetAddr(clientCon)
 		if getTargetErr != nil {
 			log.Println("getTargetErr ", getTargetErr)
@@ -207,11 +212,11 @@ func getTargetAddr(clientCon net.Conn) (string, error) {
 		return "", err
 	} else if numRead > 3 && buf[0] == 0X05 && buf[1] == 0X01 && buf[2] == 0X00 {
 		if buf[3] == 3 {
-			log.Printf("目的地址类型:%d 域名长度:%d 目标域名:%s 目标端口:%s", buf[3], buf[4], buf[5:5+buf[4]], strconv.Itoa(int(binary.BigEndian.Uint16(buf[5+buf[4]:7+buf[4]]))))
+			log.Printf("源地址%s 目标域名:%s 目标端口:%s", clientCon.RemoteAddr(), buf[5:5+buf[4]], strconv.Itoa(int(binary.BigEndian.Uint16(buf[5+buf[4]:7+buf[4]]))))
 			writeErr := mio.WriteAll(clientCon, ack)
 			return string(buf[5:5+buf[4]]) + ":" + strconv.Itoa(int(binary.BigEndian.Uint16(buf[5+buf[4]:7+buf[4]]))), writeErr
 		} else if buf[3] == 1 {
-			log.Printf("目的地址类型:%d  目标域名:%s 目标端口:%s", buf[3], net.IPv4(buf[4], buf[5], buf[6], buf[7]).String(), strconv.Itoa(int(binary.BigEndian.Uint16(buf[8:10]))))
+			log.Printf("源地址%s 目标域名:%s 目标端口:%s", clientCon.RemoteAddr(), net.IPv4(buf[4], buf[5], buf[6], buf[7]).String(), strconv.Itoa(int(binary.BigEndian.Uint16(buf[8:10]))))
 			writeErr := mio.WriteAll(clientCon, ack)
 			return net.IPv4(buf[4], buf[5], buf[6], buf[7]).String() + ":" + strconv.Itoa(int(binary.BigEndian.Uint16(buf[8:10]))), writeErr
 		} else {
@@ -232,7 +237,33 @@ func handshake(clientCon net.Conn) error {
 	} else if numRead == 3 && buf[0] == 0X05 && buf[1] == 0X01 && buf[2] == 0X00 {
 		return mio.WriteAll(clientCon, hand)
 	} else {
-		log.Printf("%d", buf[:numRead])
+		//log.Printf("%d", buf[:numRead])
 		return mio.WriteAll(clientCon, hand)
 	}
+}
+
+func auth(clientCon net.Conn) error {
+	var buf = make([]byte, 300)
+	numRead, err := clientCon.Read(buf)
+	if err != nil {
+		return err
+	} else if numRead != 3+len(Config.Pass)+len(Config.User) {
+		mio.WriteAll(clientCon, []byte{0x01, 0x01})
+		return errors.New("密码位数不对")
+	} else {
+		//log.Printf("%d", buf[:numRead])
+		//log.Printf("%d", buf[1])
+		if 3+int(buf[1]) > numRead {
+			mio.WriteAll(clientCon, []byte{0x01, 0x01})
+			return errors.New("用户名密码错误")
+		}
+		if Config.User == string(buf[2:2+int(buf[1])]) && Config.Pass == string(buf[3+int(buf[1]):numRead]) {
+			return mio.WriteAll(clientCon, []byte{0x01, 0x00})
+		} else {
+			mio.WriteAll(clientCon, []byte{0x01, 0x01})
+			return errors.New("用户名密码错误")
+		}
+
+	}
+	return nil
 }
