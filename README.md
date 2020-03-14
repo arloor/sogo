@@ -12,6 +12,12 @@
 所以，我又写了一个socks5代理，起名叫[sogo](https://github.com/arloor/sogo)。
 
 sogo本身包含sogo(client)和sogo-server。如果把sogo和sogo-server看成一个整体，一个黑盒，这个整体就是一个socks5代理。sogo(client)与本地电脑交互；sogo-server与目标网站交互；sogo(client)和sogo-server之间的交互就是http协议包裹payload进行通信。
+
+
+## 电报讨论组
+
+电报讨论组 https://t.me/popstary
+
 ## 运行日志
 
 以下是观看一个视频的日志：
